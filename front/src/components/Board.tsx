@@ -1,4 +1,6 @@
-interface User {
+import { useState } from "react";
+
+interface IUser {
   id: string;
   email: string;
   password_hash: string;
@@ -7,7 +9,7 @@ interface User {
   modifiedAt: Date;
 }
 
-const user: User = {
+const userMock: IUser = {
   id: "1",
   email: "1@klantrack.com",
   password_hash: "password",
@@ -16,7 +18,7 @@ const user: User = {
   modifiedAt: new Date(),
 };
 
-interface Project {
+interface IProject {
   id: string;
   title: string;
   createdByUserId: string;
@@ -25,7 +27,7 @@ interface Project {
   createdAt: Date;
   modifiedAt: Date;
 }
-const project: Project = {
+const projectMock: IProject = {
   id: "1",
   title: "Project Alpha",
   createdByUserId: "user1",
@@ -35,7 +37,7 @@ const project: Project = {
   modifiedAt: new Date(),
 };
 
-interface Stage {
+interface IStage {
   id: string;
   title: string;
   startsTimeTracking: boolean;
@@ -46,7 +48,7 @@ interface Stage {
   modifiedAt: Date;
 }
 
-const stages: Stage[] = [
+const stagesMock: IStage[] = [
   {
     id: "1",
     title: "To Do",
@@ -79,7 +81,7 @@ const stages: Stage[] = [
   },
 ];
 
-interface Tag {
+interface ITag {
   id: string;
   value: string;
   objectReference: "Task";
@@ -88,7 +90,7 @@ interface Tag {
   modifiedAt: Date;
 }
 
-const tags: Tag[] = [
+const tagsMock: ITag[] = [
   {
     id: "1",
     value: "Sub Project 1",
@@ -115,7 +117,7 @@ const tags: Tag[] = [
   },
 ];
 
-interface Task {
+interface ITask {
   id: string;
   title: string;
   description?: string;
@@ -132,7 +134,7 @@ interface Task {
   resolvedAt?: Date;
 }
 
-const tasks: Task[] = [
+const tasksMock: ITask[] = [
   {
     id: "1",
     title: "Task One",
@@ -172,7 +174,7 @@ const tasks: Task[] = [
     stageId: "3",
     position: 3.0,
     projectId: "1",
-    tagId: "3",
+    tagId: undefined,
     columnId: "1",
     assignedToUserId: "1",
     createdByUserId: "1",
@@ -183,7 +185,7 @@ const tasks: Task[] = [
   },
 ];
 
-interface TimeTrack {
+interface ITimeTrack {
   id: string;
   taskId: string;
   userId: string;
@@ -193,7 +195,7 @@ interface TimeTrack {
   modifiedAt: Date;
 }
 
-const timeTracks: TimeTrack[] = [
+const timeTracksMock: ITimeTrack[] = [
   {
     id: "1",
     taskId: "1",
@@ -223,6 +225,67 @@ const timeTracks: TimeTrack[] = [
   },
 ];
 
+interface StageComponentProps {
+  stage: IStage;
+  tasks: ITask[];
+  tags: ITag[];
+}
+const Stage: React.FC<StageComponentProps> = ({ stage, tasks, tags }) => {
+  const Task: React.FC<{ task: ITask; tag: ITag | undefined }> = ({
+    task,
+    tag,
+  }) => {
+    return (
+      <div
+        key={task.position}
+        className="flex-col bg-white rounded-sm border-[1px] border-gray-300 p-3 hover:bg-gray-300 hover:cursor-pointer"
+      >
+        <div>{task.title}</div>
+        <div>{task.description}</div>
+        <div>🏷️{!tag ? "-" : tag.value}</div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col bg-gray-100 p-2 rounded-md gap-y-3 w-3xs">
+      <h3 className="text-lg font-semibold uppercase">{stage.title}</h3>
+      <div className="flex flex-col mb-5">
+        {tasks
+          .filter((task) => task.stageId == stage.id)
+          .map((task) => (
+            <Task task={task} tag={tags.find((tag) => tag.id == task.tagId)} />
+          ))}
+      </div>
+    </div>
+  );
+};
+
 export default function KanbanBoard() {
-  return <div className="p-4"></div>;
+  const [stages, setStages] = useState<IStage[]>(stagesMock);
+  const [tasks, setTasks] = useState<ITask[]>(tasksMock);
+  const [project, setProject] = useState<IProject>(projectMock);
+  return (
+    <div className="p-4 flex flex-col gap-y-3">
+      <h2>{project.title}</h2>
+      <input
+        className="border-[1px] border-gray-300 p-2 rounded-md"
+        type="text"
+        placeholder="Search tasks"
+        onChange={(e) => {
+          const searchTerm = e.target.value.toLowerCase();
+          const filteredTasks = tasksMock.filter((task) =>
+            task.title.toLowerCase().includes(searchTerm)
+          );
+          setTasks(filteredTasks);
+          // Update the state or perform any action with filteredTasks
+        }}
+      />
+      <div className="flex gap-x-4">
+        {stages.map((stage) => (
+          <Stage key={stage.id} stage={stage} tasks={tasks} tags={tagsMock} />
+        ))}
+      </div>
+    </div>
+  );
 }
